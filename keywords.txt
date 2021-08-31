@@ -1,0 +1,47 @@
+# class (KEYWORD1)
+UbtechBus	KEYWORD1
+
+
+# function and method (KEYWORD2)
+begin	KEYWORD2
+setTimeout	KEYWORD2
+queryDevices	KEYWORD2
+
+queryServo	KEYWORD2
+setServoId	KEYWORD2
+getServoPosition	KEYWORD2
+setServoPosition	KEYWORD2
+setServoTurn	KEYWORD2
+stopServo	KEYWORD2
+
+queryMotor	KEYWORD2
+setMotorId	KEYWORD2
+setMotorTurn	KEYWORD2
+stopMotor	KEYWORD2
+getMotorSpeed	KEYWORD2
+
+queryInfrared	KEYWORD2
+setInfraredId	KEYWORD2
+enableInfrared	KEYWORD2
+getInfraredDistance	KEYWORD2
+
+queryUltrasonic	KEYWORD2
+setUltrasonicId	KEYWORD2
+enableUltrasonic	KEYWORD2
+getUltrasonicDistance	KEYWORD2
+setUltrasonicLed	KEYWORD2
+setUltrasonicLedOff	KEYWORD2
+
+DeviceType	KEYWORD2
+
+
+# constant (LITERAL1)
+UNKNOWN	LITERAL1
+SERVO_H04	LITERAL1
+MOTOR	LITERAL1
+INFRARED	LITERAL1
+ULTRASONIC	LITERAL1
+TOUCH	LITERAL1
+COLOR	LITERAL1
+LED_EYE	LITERAL1
+SPEAKER	LITERAL1

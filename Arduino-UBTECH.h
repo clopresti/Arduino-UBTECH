@@ -48,9 +48,51 @@ public:
     ULTRASONIC = 4,
     TOUCH = 5,
     COLOR = 6,
-    LED_EYE = 7,
-    SPEAKER = 8,
+    EYE_LIGHT = 7,
   };
+
+  typedef struct _Color {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+    _Color() : red(0), green(0), blue(0) {}
+    _Color(uint8_t red, uint8_t green, uint8_t blue)
+      : red(red), green(green), blue(blue) {}
+  } Color;
+
+  enum LED : uint8_t {
+    L1 = 1,
+    L2 = 2,
+    L3 = 4,
+    L4 = 8,
+    L5 = 16,
+    L6 = 32,
+    L7 = 64,
+    L8 = 128,
+    ALL = 255
+  };
+
+  enum Scene : uint8_t {
+    COLORED = 0,
+    DISCO = 1,
+    PRIMARY = 2,
+    STACKING = 3
+  };
+
+  enum Face : uint8_t {
+    BLINK = 0,
+    SHY = 1,
+    TEARS = 2,
+    TEARS_FLASH = 3,
+    CRY = 4,
+    DIZZY = 5,
+    HAPPY = 6,
+    SURPRISED = 7,
+    BREATH = 8,
+    FLASH = 9,
+    FAN = 10,
+    WIPERS = 11
+  };  
 
   typedef void (*DeviceCallback)(DeviceType type, uint8_t id);
 
@@ -87,8 +129,17 @@ public:
   bool      setUltrasonicId(uint8_t oldId, uint8_t newId);
   bool      enableUltrasonic(uint8_t id, bool enable);
   uint16_t  getUltrasonicDistance(uint8_t id);
-  bool      setUltrasonicLed(uint8_t id, uint8_t red, uint8_t green, uint8_t blue);
+  bool      setUltrasonicLed(uint8_t id, Color color);
   bool      setUltrasonicLedOff(uint8_t id);
+
+  bool      queryEyeLight(uint8_t id);
+  void      queryEyeLight(uint8_t minId, uint8_t maxId, DeviceCallback callback);
+  bool      setEyeLightId(uint8_t oldId, uint8_t newId);
+  bool      enableEyeLight(uint8_t id, bool enable);
+  bool      setEyeLightColor(uint8_t id, Color color, LED led = LED::ALL, float nSeconds = -1);
+  bool      setEyeLightColor(uint8_t id, Color c1, Color c2, Color c3, Color c4, Color c5, Color c6, Color c7, Color c8, float nSeconds = -1);
+  bool      setEyeLightScene(uint8_t id, Scene scene, uint8_t nTimes = 1);
+  bool      setEyeLightFace(uint8_t id, Face face, Color color, uint8_t nTimes = 1);
 
 private:
 
@@ -118,5 +169,9 @@ private:
   uint16_t _timeout;
   HalfDuplexSoftwareSerial _serial;
 };
+
+static UbtechBus::LED operator |(const UbtechBus::LED& L1, const UbtechBus::LED& L2) {
+  return static_cast<UbtechBus::LED>(static_cast<int>(L1) | static_cast<int>(L2));
+}
 
 #endif

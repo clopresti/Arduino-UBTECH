@@ -78,7 +78,7 @@ void printDevices()
     Serial.println("No Devices Found.");
   } else {
     char msg[30]; const char* types[] = { 
-      "UNKNOWN", "SERVO_H04", "MOTOR", "INFRARED", "ULTRASONIC", "TOUCH", "COLOR", "LED_EYE", "SPEAKER" };
+      "UNKNOWN", "SERVO_H04", "MOTOR", "INFRARED", "ULTRASONIC", "TOUCH", "COLOR", "EYE_LIGHT" };
     for (int i = 0; i < deviceCount; i++) {
       DeviceInfo& d = deviceInfo[i];
       sprintf(msg, "Device: %s, Id: %d", types[d.type], d.id);

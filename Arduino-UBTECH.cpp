@@ -32,6 +32,7 @@ Refer to: https://www.arduino.cc/en/Reference/SoftwareSerial
 */
 
 
+
 UbtechBus::UbtechBus(uint8_t rxPin, uint8_t txPin)
     : _serial(rxPin, txPin), _timeout(50)
 {
@@ -57,6 +58,7 @@ void UbtechBus::queryDevices(DeviceCallback callback)
     queryMotor(1, 8, callback);
     queryInfrared(1, 8, callback);
     queryUltrasonic(1, 8, callback);
+    queryEyeLight(1, 8, callback);
 }
 
 
@@ -255,10 +257,10 @@ uint16_t UbtechBus::getUltrasonicDistance(uint8_t id)
     return ((buffer[5] << 8) + buffer[6]);
 }
 
-bool UbtechBus::setUltrasonicLed(uint8_t id, uint8_t red, uint8_t green, uint8_t blue)
+bool UbtechBus::setUltrasonicLed(uint8_t id, Color color)
 {
-    bool off = (red == 0x00 && green == 0x00 && blue == 0x00);
-    uint8_t buffer[] = { 0xF5, 0x5F, 0x0D/*len*/, 0x08/*cmd*/, id, red, green, blue, (uint8_t)(off ? 0x00 : 0x01), 0x00, (uint8_t)(off ? 0x00 : 0xFF), (uint8_t)(off ? 0x00 : 0xFF), 0x00, 0xED };
+    bool off = (color.red == 0x00 && color.green == 0x00 && color.blue == 0x00);
+    uint8_t buffer[] = { 0xF5, 0x5F, 0x0D/*len*/, 0x08/*cmd*/, id, color.red, color.green, color.blue, (uint8_t)(off ? 0x00 : 0x01), 0x00, (uint8_t)(off ? 0x00 : 0xFF), (uint8_t)(off ? 0x00 : 0xFF), 0x00, 0xED };
     buffer[12] = checksum(buffer+2, 10);
     if (!sendAndReceive(buffer, 14, 7))
         return false;
@@ -266,7 +268,87 @@ bool UbtechBus::setUltrasonicLed(uint8_t id, uint8_t red, uint8_t green, uint8_t
 }
 
 bool UbtechBus::setUltrasonicLedOff(uint8_t id) {
-    return setUltrasonicLed(id, 0x00, 0x00, 0x00);
+    return setUltrasonicLed(id, Color(0x00, 0x00, 0x00));
+}
+
+
+bool UbtechBus::queryEyeLight(uint8_t id)
+{
+    uint8_t buffer[] = { 0xF4, 0x4F, 0x06/*len*/, 0x07/*cmd*/, id, 0x00, 0xED, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    buffer[5] = checksum(buffer+2, 3);
+    if (!sendAndReceive(buffer, 7, 15))
+        return false;
+    return (buffer[0] == 0xF4 && buffer[1] == 0x4F && buffer[4] - 0xAA == id);
+}
+
+void UbtechBus::queryEyeLight(uint8_t minId, uint8_t maxId, DeviceCallback callback) {
+    queryDevice(DeviceType::EYE_LIGHT, [](uint8_t id, UbtechBus* pBus) {
+        return pBus->queryEyeLight(id);
+    }, minId, maxId, callback, 10);
+}
+
+bool UbtechBus::setEyeLightId(uint8_t oldId, uint8_t newId)
+{
+    uint8_t buffer[] = { 0xF4, 0x4F, 0x07/*len*/, 0x06/*cmd*/, oldId, newId, 0x00, 0xED };
+    buffer[6] = checksum(buffer+2, 4);
+    if (!sendAndReceive(buffer, 8, 7))
+        return false;
+    return ((buffer[0] == 0xF4) && (buffer[1] == 0x4F) && (buffer[4] - 0xAA == oldId));
+}
+
+bool UbtechBus::enableEyeLight(uint8_t id, bool enable)
+{
+    uint8_t buffer[] = { 0xF4, 0x4F, 0x06/*len*/, (uint8_t)(enable ? 0x02 : 0x03)/*cmd*/, id, 0x00, 0xED };
+    buffer[5] = checksum(buffer+2, 3);
+    if (!sendAndReceive(buffer, 7, 7))
+        return false;
+    return ((buffer[0] == 0xF4) && (buffer[1] == 0x4F) && (buffer[4] - 0xAA == id));
+}
+
+bool UbtechBus::setEyeLightColor(uint8_t id, Color color, LED led, float nSeconds)
+{
+    uint8_t duration = nSeconds < 0.1 || nSeconds >= 25.5 ? 255 : (uint8_t)(nSeconds * 10.0);
+    uint8_t buffer[] = { 0xF4, 0x4F, 0x0C/*len*/, 0x0B/*cmd*/, id, duration, 0x01, led, color.red, color.green, color.blue, 0x00, 0xED };
+    buffer[11] = checksum(buffer+2, 9);
+    if (!sendAndReceive(buffer, 13, 7))
+        return false;
+    return ((buffer[0] == 0xF4) && (buffer[1] == 0x4F) && (buffer[4] - 0xAA == id));
+}
+
+bool UbtechBus::setEyeLightColor(uint8_t id, Color c1, Color c2, Color c3, Color c4, Color c5, Color c6, Color c7, Color c8, float nSeconds)
+{
+    uint8_t duration = nSeconds < 0.1 || nSeconds >= 25.5 ? 255 : (uint8_t)(nSeconds * 10.0);  
+    uint8_t idx = 7, buffer[] = { 0xF4, 0x4F, 0x28/*len*/, 0x0B/*cmd*/, id, duration, 0x08, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0x00, 0xED };
+    buffer[idx++] = 0x01; buffer[idx++] = c1.red; buffer[idx++] = c1.green; buffer[idx++] = c1.blue;
+    buffer[idx++] = 0x02; buffer[idx++] = c2.red; buffer[idx++] = c2.green; buffer[idx++] = c2.blue;
+    buffer[idx++] = 0x04; buffer[idx++] = c3.red; buffer[idx++] = c3.green; buffer[idx++] = c3.blue;
+    buffer[idx++] = 0x08; buffer[idx++] = c4.red; buffer[idx++] = c4.green; buffer[idx++] = c4.blue;
+    buffer[idx++] = 0x10; buffer[idx++] = c5.red; buffer[idx++] = c5.green; buffer[idx++] = c5.blue;
+    buffer[idx++] = 0x20; buffer[idx++] = c6.red; buffer[idx++] = c6.green; buffer[idx++] = c6.blue;
+    buffer[idx++] = 0x40; buffer[idx++] = c7.red; buffer[idx++] = c7.green; buffer[idx++] = c7.blue;
+    buffer[idx++] = 0x80; buffer[idx++] = c8.red; buffer[idx++] = c8.green; buffer[idx++] = c8.blue;
+    buffer[39] = checksum(buffer+2, 37);
+    if (!sendAndReceive(buffer, 41, 7))
+        return false;
+    return ((buffer[0] == 0xF4) && (buffer[1] == 0x4F) && (buffer[4] - 0xAA == id));
+}
+
+bool UbtechBus::setEyeLightScene(uint8_t id, Scene scene, uint8_t nTimes)
+{
+    uint8_t buffer[] = { 0xF4, 0x4F, 0x0C/*len*/, 0x0A/*cmd*/, id, (uint8_t)(scene + 12), 0x00, nTimes, 0x00, 0x00, 0x00, 0x00, 0xED };
+    buffer[11] = checksum(buffer+2, 9);
+    if (!sendAndReceive(buffer, 13, 7))
+        return false;
+    return ((buffer[0] == 0xF4) && (buffer[1] == 0x4F) && (buffer[4] - 0xAA == id));  
+}
+
+bool UbtechBus::setEyeLightFace(uint8_t id, Face face, Color color, uint8_t nTimes)
+{
+    uint8_t buffer[] = { 0xF4, 0x4F, 0x0C/*len*/, 0x0A/*cmd*/, id, face, 0x00, nTimes, color.red, color.green, color.blue, 0x00, 0xED };
+    buffer[11] = checksum(buffer+2, 9);
+    if (!sendAndReceive(buffer, 13, 7))
+        return false;
+    return ((buffer[0] == 0xF4) && (buffer[1] == 0x4F) && (buffer[4] - 0xAA == id));  
 }
 
 
